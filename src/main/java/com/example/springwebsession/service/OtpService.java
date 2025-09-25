@@ -68,7 +68,7 @@ public class OtpService {
 
     if (isValid) {
       log.info("OTP válido para documento: {}", documentNumber);
-      otpStorage.remove(documentNumber); // Eliminar OTP después de uso exitoso
+//      otpStorage.remove(documentNumber); // Eliminar OTP después de uso exitoso
     } else {
       log.warn("OTP inválido para documento: {}", documentNumber);
     }

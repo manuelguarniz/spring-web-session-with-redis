@@ -25,11 +25,11 @@ public class SecurityConfig {
 
   private final OtpService otpService;
 
-//  @Bean
-//  public ReactiveAuthenticationManager otpAuthenticationManager() {
-//      return new OTPReactiveAuthenticationManager(otpService);
-//  }
-  
+   @Bean
+   public ReactiveAuthenticationManager otpAuthenticationManager() {
+     return new OTPReactiveAuthenticationManager(otpService);
+   }
+
   /**
    * Configura la cadena de filtros de seguridad reactiva
    * 
@@ -37,9 +37,10 @@ public class SecurityConfig {
    * @return SecurityWebFilterChain configurada
    */
   @Bean
-  public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http, ReactiveAuthenticationManager otpAuthenticationManager) {
+  public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http,
+      ReactiveAuthenticationManager otpAuthenticationManager) {
     log.info("Configurando cadena de filtros de seguridad reactiva con OTP");
- // Creamos el filtro de autenticación
+    // Creamos el filtro de autenticación
     AuthenticationWebFilter otpAuthenticationFilter = new AuthenticationWebFilter(otpAuthenticationManager);
 
     // Configuramos la ruta que el filtro procesará
