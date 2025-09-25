@@ -22,7 +22,7 @@ spring:
   session:
     store-type: redis
     redis:
-      namespace: "spring:session"
+      namespace: "spring:demo:session"
       flush-mode: on_save
     timeout: 30m
   main:

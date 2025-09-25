@@ -129,11 +129,8 @@ public class OtpService {
 
     @Override
     public String toString() {
-      return "OtpData{" +
-          "otp='" + otp + '\'' +
-          ", documentNumber='" + documentNumber + '\'' +
-          ", expiryTime=" + expiryTime +
-          '}';
+      return "OtpData{" + "otp='" + otp + '\'' + ", documentNumber='" + documentNumber + '\'' + ", expiryTime="
+          + expiryTime + '}';
     }
   }
 }

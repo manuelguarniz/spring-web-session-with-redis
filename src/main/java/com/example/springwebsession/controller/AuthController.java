@@ -26,8 +26,8 @@ public class AuthController {
   private final OtpService otpService;
 
   /**
-   * Endpoint de login que recibe número de documento y email
-   * Genera un OTP y lo almacena en la sesión
+   * Endpoint de login que recibe número de documento y email Genera un OTP y lo
+   * almacena en la sesión
    * 
    * @param documentNumber Número de documento de identidad
    * @param email          Correo electrónico
@@ -35,94 +35,88 @@ public class AuthController {
    * @return Respuesta con el OTP generado
    */
   @PostMapping("/login")
-  public Mono<Map<String, Object>> login(
-      @RequestParam String documentNumber,
-      @RequestParam String email,
+  public Mono<Map<String, Object>> login(@RequestParam String documentNumber, @RequestParam String email,
       ServerWebExchange exchange) {
 
     log.info("Iniciando login para documento: {} y email: {}", documentNumber, email);
 
-    return exchange.getSession()
-        .flatMap(session -> {
-          // Almacenar datos en la sesión
-          session.getAttributes().put("documentNumber", documentNumber);
-          session.getAttributes().put("email", email);
-          session.getAttributes().put("loginTime", LocalDateTime.now());
+    return exchange.getSession().flatMap(session -> {
+      // Almacenar datos en la sesión
+      session.getAttributes().put("documentNumber", documentNumber);
+      session.getAttributes().put("email", email);
+      session.getAttributes().put("loginTime", LocalDateTime.now());
 
-          return session.save();
-        })
-        .then(otpService.generateOtp(documentNumber))
-        .map(otp -> {
-          Map<String, Object> response = new HashMap<>();
-          response.put("message", "OTP generado exitosamente");
-          response.put("otp", otp); // En producción, esto se enviaría por email/SMS
-          response.put("documentNumber", documentNumber);
-          response.put("email", email);
-          response.put("expiresIn", "5 minutos");
-          response.put("timestamp", LocalDateTime.now());
+      return session.save();
+    }).then(otpService.generateOtp(documentNumber)).flatMap(otp -> exchange.getSession().flatMap(session -> {
+      // Almacenar OTP en la sesión para el filtro de autenticación
+      session.getAttributes().put("otp", otp);
+      return session.save();
+    }).then(Mono.fromCallable(() -> {
+      Map<String, Object> response = new HashMap<>();
+      response.put("message", "OTP generado exitosamente");
+      response.put("otp", otp); // En producción, esto se enviaría por email/SMS
+      response.put("documentNumber", documentNumber);
+      response.put("email", email);
+      response.put("expiresIn", "5 minutos");
+      response.put("timestamp", LocalDateTime.now());
 
-          log.info("Login exitoso para documento: {} - OTP: {}", documentNumber, otp);
-          return response;
-        });
+      log.info("Login exitoso para documento: {} - OTP: {}", documentNumber, otp);
+      return response;
+    })));
   }
 
   /**
-   * Endpoint para validar OTP
-   * Valida el OTP con el número de documento almacenado en la sesión
+   * Endpoint temporal para validar OTP y marcar como autenticado (Para pruebas -
+   * en producción esto se haría automáticamente)
    * 
    * @param otp      Código OTP a validar
    * @param exchange ServerWebExchange para acceder a la sesión
    * @return Resultado de la validación
    */
-  @PostMapping("/validate")
-  public Mono<Map<String, Object>> validateOtp(
-      @RequestParam String otp,
-      ServerWebExchange exchange) {
-
-    log.info("Validando OTP: {}", otp);
-
-    return exchange.getSession()
-        .flatMap(session -> {
-          String documentNumber = (String) session.getAttributes().get("documentNumber");
-
-          if (documentNumber == null) {
-            log.warn("No se encontró número de documento en la sesión");
-            return Mono.just(createErrorResponse("No hay sesión de login activa"));
-          }
-
-          return otpService.validateOtp(documentNumber, otp)
-              .map(isValid -> {
-                if (isValid) {
-                  // Marcar como autenticado en la sesión
-                  session.getAttributes().put("authenticated", true);
-                  session.getAttributes().put("authTime", LocalDateTime.now());
-
-                  log.info("Autenticación exitosa para documento: {}", documentNumber);
-
-                  Map<String, Object> response = new HashMap<>();
-                  response.put("message", "Autenticación exitosa");
-                  response.put("authenticated", true);
-                  response.put("documentNumber", documentNumber);
-                  response.put("timestamp", LocalDateTime.now());
-
-                  return response;
-                } else {
-                  log.warn("Autenticación fallida para documento: {}", documentNumber);
-
-                  Map<String, Object> response = new HashMap<>();
-                  response.put("message", "OTP inválido o expirado");
-                  response.put("authenticated", false);
-                  response.put("timestamp", LocalDateTime.now());
-
-                  return response;
-                }
-              });
-        })
-        .switchIfEmpty(Mono.fromCallable(() -> {
-          log.warn("No se encontró sesión activa");
-          return createErrorResponse("No hay sesión activa");
-        }));
-  }
+//  @PostMapping("/validate")
+//  public Mono<Map<String, Object>> validateOtp(@RequestParam String otp, ServerWebExchange exchange) {
+//
+//    log.info("Validando OTP: {}", otp);
+//
+//    return exchange.getSession().flatMap(session -> {
+//      String documentNumber = (String) session.getAttributes().get("documentNumber");
+//
+//      if (documentNumber == null) {
+//        log.warn("No se encontró número de documento en la sesión");
+//        return Mono.just(createErrorResponse("No hay sesión de login activa"));
+//      }
+//
+//      return otpService.validateOtp(documentNumber, otp).map(isValid -> {
+//        if (isValid) {
+//          // Marcar como autenticado en la sesión
+//          session.getAttributes().put("authenticated", true);
+//          session.getAttributes().put("authTime", LocalDateTime.now());
+//
+//          log.info("Autenticación exitosa para documento: {}", documentNumber);
+//
+//          Map<String, Object> response = new HashMap<>();
+//          response.put("message", "Autenticación exitosa");
+//          response.put("authenticated", true);
+//          response.put("documentNumber", documentNumber);
+//          response.put("timestamp", LocalDateTime.now());
+//
+//          return response;
+//        } else {
+//          log.warn("Autenticación fallida para documento: {}", documentNumber);
+//
+//          Map<String, Object> response = new HashMap<>();
+//          response.put("message", "OTP inválido o expirado");
+//          response.put("authenticated", false);
+//          response.put("timestamp", LocalDateTime.now());
+//
+//          return response;
+//        }
+//      });
+//    }).switchIfEmpty(Mono.fromCallable(() -> {
+//      log.warn("No se encontró sesión activa");
+//      return createErrorResponse("No hay sesión activa");
+//    }));
+//  }
 
   /**
    * Endpoint para verificar el estado de autenticación
@@ -134,33 +128,31 @@ public class AuthController {
   public Mono<Map<String, Object>> getAuthStatus(ServerWebExchange exchange) {
     log.info("Verificando estado de autenticación");
 
-    return exchange.getSession()
-        .map(session -> {
-          Boolean authenticated = (Boolean) session.getAttributes().get("authenticated");
-          String documentNumber = (String) session.getAttributes().get("documentNumber");
-          String email = (String) session.getAttributes().get("email");
-          LocalDateTime loginTime = (LocalDateTime) session.getAttributes().get("loginTime");
-          LocalDateTime authTime = (LocalDateTime) session.getAttributes().get("authTime");
+    return exchange.getSession().map(session -> {
+      Boolean authenticated = (Boolean) session.getAttributes().get("authenticated");
+      String documentNumber = (String) session.getAttributes().get("documentNumber");
+      String email = (String) session.getAttributes().get("email");
+      LocalDateTime loginTime = (LocalDateTime) session.getAttributes().get("loginTime");
+      LocalDateTime authTime = (LocalDateTime) session.getAttributes().get("authTime");
 
-          Map<String, Object> response = new HashMap<>();
-          response.put("authenticated", authenticated != null ? authenticated : false);
-          response.put("documentNumber", documentNumber);
-          response.put("email", email);
-          response.put("loginTime", loginTime);
-          response.put("authTime", authTime);
-          response.put("sessionId", session.getId());
-          response.put("timestamp", LocalDateTime.now());
+      Map<String, Object> response = new HashMap<>();
+      response.put("authenticated", authenticated != null ? authenticated : false);
+      response.put("documentNumber", documentNumber);
+      response.put("email", email);
+      response.put("loginTime", loginTime);
+      response.put("authTime", authTime);
+      response.put("sessionId", session.getId());
+      response.put("timestamp", LocalDateTime.now());
 
-          log.info("Estado de autenticación: {} para documento: {}", authenticated, documentNumber);
-          return response;
-        })
-        .switchIfEmpty(Mono.fromCallable(() -> {
-          Map<String, Object> response = new HashMap<>();
-          response.put("authenticated", false);
-          response.put("message", "No hay sesión activa");
-          response.put("timestamp", LocalDateTime.now());
-          return response;
-        }));
+      log.info("Estado de autenticación: {} para documento: {}", authenticated, documentNumber);
+      return response;
+    }).switchIfEmpty(Mono.fromCallable(() -> {
+      Map<String, Object> response = new HashMap<>();
+      response.put("authenticated", false);
+      response.put("message", "No hay sesión activa");
+      response.put("timestamp", LocalDateTime.now());
+      return response;
+    }));
   }
 
   /**
@@ -173,19 +165,17 @@ public class AuthController {
   public Mono<Map<String, Object>> logout(ServerWebExchange exchange) {
     log.info("Cerrando sesión");
 
-    return exchange.getSession()
-        .flatMap(session -> {
-          String documentNumber = (String) session.getAttributes().get("documentNumber");
-          log.info("Cerrando sesión para documento: {}", documentNumber);
+    return exchange.getSession().flatMap(session -> {
+      String documentNumber = (String) session.getAttributes().get("documentNumber");
+      log.info("Cerrando sesión para documento: {}", documentNumber);
 
-          return session.invalidate();
-        })
-        .then(Mono.fromCallable(() -> {
-          Map<String, Object> response = new HashMap<>();
-          response.put("message", "Sesión cerrada exitosamente");
-          response.put("timestamp", LocalDateTime.now());
-          return response;
-        }));
+      return session.invalidate();
+    }).then(Mono.fromCallable(() -> {
+      Map<String, Object> response = new HashMap<>();
+      response.put("message", "Sesión cerrada exitosamente");
+      response.put("timestamp", LocalDateTime.now());
+      return response;
+    }));
   }
 
   /**

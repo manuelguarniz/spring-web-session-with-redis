@@ -1,4 +1,4 @@
-### Test del flujo de autenticación con OTP
+@sessionId = 5899cbec-7e1e-4e42-8b2b-a07f79257851
 
 ### 1. Login - Generar OTP
 POST http://localhost:8080/auth/login?documentNumber=12345678&email=test@example.com
@@ -28,8 +28,8 @@ connection: close
 }
 
 ### 2. Validar OTP (usar el OTP devuelto en el paso 1)
-POST http://localhost:8080/auth/validate?otp=762716
-Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
+POST http://localhost:8080/auth/validate?otp=781556
+Cookie: SESSION={{sessionId}}
 Content-Type: application/x-www-form-urlencoded
 
 ### Response
@@ -55,7 +55,7 @@ connection: close
 
 ### 3. Verificar estado de autenticación
 POST http://localhost:8080/auth/status
-Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
+Cookie: SESSION=d353e692-57cc-4689-ae35-8693207343f0
 
 ### Response
 HTTP/1.1 200 OK
@@ -82,8 +82,7 @@ connection: close
 
 ### 4. Probar endpoint protegido (debería funcionar si está autenticado)
 GET http://localhost:8080/api/hello
-Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
-Content-Type: application/json
+Cookie: SESSION=d353e692-57cc-4689-ae35-8693207343f0
 
 ### 5. Cerrar sesión
 POST http://localhost:8080/auth/logout
