@@ -1,0 +1,12 @@
+### Test del endpoint protegido sin autenticación (debería fallar)
+GET http://localhost:8080/api/hello
+
+### Test del endpoint protegido con autenticación (debería funcionar)
+GET http://localhost:8080/api/hello
+Authorization: Bearer test-token-123
+
+### Test del endpoint de actuator (debería funcionar sin autenticación)
+GET http://localhost:8080/actuator/health
+
+### Test del endpoint de actuator info (debería funcionar sin autenticación)
+GET http://localhost:8080/actuator/info

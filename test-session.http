@@ -1,0 +1,22 @@
+### Test de Spring Session con Redis
+
+### 1. Obtener información de sesión
+GET http://localhost:8080/api/session/info
+
+### 2. Establecer atributo en sesión
+POST http://localhost:8080/api/session/set?key=usuario&value=testuser
+
+### 3. Obtener atributo de sesión
+GET http://localhost:8080/api/session/get?key=usuario
+
+### 4. Obtener información de sesión nuevamente
+GET http://localhost:8080/api/session/info
+
+### 5. Eliminar atributo de sesión
+POST http://localhost:8080/api/session/remove?key=usuario
+
+### 6. Invalidar sesión
+POST http://localhost:8080/api/session/invalidate
+
+### 7. Verificar que la sesión fue invalidada
+GET http://localhost:8080/api/session/info

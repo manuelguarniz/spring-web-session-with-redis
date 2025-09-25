@@ -1,0 +1,9 @@
+@baseUrl = http://localhost:8080
+
+### test del endpoint /api/hello
+GET {{baseUrl}}/api/hello
+
+
+### test del endpoint /api/hello with security
+GET {{baseUrl}}/api/hello
+Authorization: Bearer test-token-123

@@ -1,0 +1,106 @@
+### Test del flujo de autenticación con OTP
+
+### 1. Login - Generar OTP
+POST http://localhost:8080/auth/login?documentNumber=12345678&email=test@example.com
+Content-Type: application/x-www-form-urlencoded
+
+### Response login otp
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 174
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+pragma: no-cache
+expires: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 0
+referrer-policy: no-referrer
+set-cookie: SESSION=6797c2c3-247a-4e62-8e97-9f0db6a90ebf; Path=/; HTTPOnly; SameSite=Lax
+connection: close
+
+{
+  "expiresIn": "5 minutos",
+  "documentNumber": "12345678",
+  "otp": "665135",
+  "message": "OTP generado exitosamente",
+  "email": "test@example.com",
+  "timestamp": "2025-09-24T19:51:39.753573"
+}
+
+### 2. Validar OTP (usar el OTP devuelto en el paso 1)
+POST http://localhost:8080/auth/validate?otp=762716
+Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
+Content-Type: application/x-www-form-urlencoded
+
+### Response
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 126
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+pragma: no-cache
+expires: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 0
+referrer-policy: no-referrer
+connection: close
+
+{
+  "authenticated": true,
+  "documentNumber": "12345678",
+  "message": "Autenticación exitosa",
+  "timestamp": "2025-09-24T19:52:37.927981"
+}
+
+
+### 3. Verificar estado de autenticación
+POST http://localhost:8080/auth/status
+Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
+
+### Response
+HTTP/1.1 200 OK
+content-type: application/json
+content-length: 250
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+pragma: no-cache
+expires: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 0
+referrer-policy: no-referrer
+connection: close
+
+{
+  "authenticated": true,
+  "loginTime": "2025-09-24T22:45:12.428377",
+  "documentNumber": "12345678",
+  "authTime": "2025-09-24T22:45:59.570023",
+  "sessionId": "e238f7b4-6eae-4bbd-add4-0ad137e4d907",
+  "email": "test@example.com",
+  "timestamp": "2025-09-24T22:46:55.742185"
+}
+
+### 4. Probar endpoint protegido (debería funcionar si está autenticado)
+GET http://localhost:8080/api/hello
+Cookie: SESSION=e238f7b4-6eae-4bbd-add4-0ad137e4d907
+Content-Type: application/json
+
+### 5. Cerrar sesión
+POST http://localhost:8080/auth/logout
+
+### 6. Probar endpoint protegido (debería fallar después del logout)
+GET http://localhost:8080/api/hello
+
+### unauthorized response
+HTTP/1.1 401 Unauthorized
+www-authenticate: Basic realm="Realm"
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+pragma: no-cache
+expires: 0
+x-content-type-options: nosniff
+x-frame-options: DENY
+x-xss-protection: 0
+referrer-policy: no-referrer
+content-length: 0
+connection: close
+

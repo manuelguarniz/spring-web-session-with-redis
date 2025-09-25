@@ -1,0 +1,47 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: spring-web-session-with-redis
+
+  # Configuración de Redis
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2000ms
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  # Configuración de Spring Session
+  session:
+    store-type: redis
+    redis:
+      namespace: "spring:session"
+      flush-mode: on_save
+    timeout: 30m
+  main:
+    allow-bean-definition-overriding: true
+
+# Configuración de Actuator
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+# Configuración de logging
+logging:
+  level:
+    com.example.springwebsession: INFO
+    org.springframework.web: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
