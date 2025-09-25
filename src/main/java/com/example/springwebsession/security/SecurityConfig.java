@@ -5,13 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
-import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.security.web.server.context.ServerSecurityContextRepository;
+import org.springframework.security.web.server.context.WebSessionServerSecurityContextRepository;
+import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers;
 
 /**
  * Configuración de seguridad reactiva para WebFlux Protege el endpoint
@@ -25,10 +25,13 @@ public class SecurityConfig {
 
   private final OtpService otpService;
 
-   @Bean
-   public ReactiveAuthenticationManager otpAuthenticationManager() {
-     return new OTPReactiveAuthenticationManager(otpService);
-   }
+  @Bean
+  public ServerSecurityContextRepository securityContextRepository() {
+    return new WebSessionServerSecurityContextRepository();
+  }
+
+  // ReactiveAuthenticationManager eliminado - ahora se maneja en
+  // OTPAuthenticationWebFilter
 
   /**
    * Configura la cadena de filtros de seguridad reactiva
@@ -37,18 +40,17 @@ public class SecurityConfig {
    * @return SecurityWebFilterChain configurada
    */
   @Bean
-  public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http,
-      ReactiveAuthenticationManager otpAuthenticationManager) {
-    log.info("Configurando cadena de filtros de seguridad reactiva con OTP");
-    // Creamos el filtro de autenticación
-    AuthenticationWebFilter otpAuthenticationFilter = new AuthenticationWebFilter(otpAuthenticationManager);
+  public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+    log.info("Configurando cadena de filtros de seguridad reactiva con OTP simplificado");
 
-    // Configuramos la ruta que el filtro procesará
-    otpAuthenticationFilter.setRequiresAuthenticationMatcher(
-        new PathPatternParserServerWebExchangeMatcher("/auth/validate"));
+    // Crear filtro de autenticación OTP simplificado
+    OTPAuthenticationWebFilter otpFilter = new OTPAuthenticationWebFilter(otpService);
 
-    // Configuramos el convertidor que extrae las credenciales
-    otpAuthenticationFilter.setServerAuthenticationConverter(new OTPAuthenticationConverter(otpService));
+    // ✅ CONFIGURAR MATCHER - Procesar /auth/validate y endpoints protegidos
+    otpFilter.setRequiresAuthenticationMatcher(
+        ServerWebExchangeMatchers.pathMatchers("/auth/validate", "/api/hello", "/api/protected/**"));
+
+    log.info("Filtro OTP configurado para: /auth/validate, /api/hello, /api/protected/**");
 
     return http
         // Deshabilitar CSRF para APIs REST
@@ -59,20 +61,21 @@ public class SecurityConfig {
             // Permitir acceso a actuator sin autenticación
             .pathMatchers("/actuator/**").permitAll()
 
-            // Permitir endpoints de autenticación sin autenticación
-            .pathMatchers("/auth/**").permitAll()
+            // Permitir endpoints de autenticación sin autenticación (excepto
+            // /auth/validate)
+            .pathMatchers("/auth/login", "/auth/status", "/auth/logout").permitAll()
 
             // Permitir endpoints de sesión sin autenticación
             .pathMatchers("/api/session/**").permitAll()
 
-            // Proteger el endpoint /api/hello
-            .pathMatchers("/api/hello").authenticated()
+            // Proteger endpoints que requieren autenticación
+            .pathMatchers("/auth/validate", "/api/hello", "/api/protected/**").authenticated()
 
             // Permitir otros endpoints públicos si los hay
             .anyExchange().permitAll())
 
-        // Agregar filtro de autenticación OTP personalizado
-        .addFilterAt(otpAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+        // Agregar filtro de autenticación OTP simplificado
+        .addFilterAt(otpFilter, SecurityWebFiltersOrder.AUTHENTICATION)
 
         .build();
   }

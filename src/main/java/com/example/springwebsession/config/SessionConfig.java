@@ -6,11 +6,12 @@ import org.springframework.session.data.redis.config.annotation.web.server.Enabl
 
 /**
  * Configuración de Spring Session con Redis para WebFlux
- * Spring Boot se encarga automáticamente de la configuración
+ * Usa el namespace configurado en application.yml
  */
 @Slf4j
 @Configuration
-@EnableRedisWebSession(maxInactiveIntervalInSeconds = 1800) // 30 minutos
+@EnableRedisWebSession(maxInactiveIntervalInSeconds = 1800, // 30 minutos
+    redisNamespace = "${spring.session.redis.namespace}")
 public class SessionConfig {
 
   // Spring Boot configura automáticamente:
@@ -18,4 +19,5 @@ public class SessionConfig {
   // - ReactiveSessionRepository
   // - WebSessionStore
   // - WebSessionManager
+  // - ReactiveRedisTemplate
 }

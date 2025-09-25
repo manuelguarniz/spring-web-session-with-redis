@@ -1,4 +1,4 @@
-@sessionId = 46c25f65-526f-48ef-b4b5-15022700effe
+@sessionId=2a43f5f5-b44c-4ad3-9ccb-0034830edb48
 
 ### 1. Login - Generar OTP
 POST http://localhost:8080/auth/login?documentNumber=12345678&email=test@example.com
@@ -28,7 +28,7 @@ connection: close
 }
 
 ### 2. Validar OTP (usar el OTP devuelto en el paso 1)
-PUT http://localhost:8080/auth/validate?otp=646952
+PUT http://localhost:8080/auth/validate?otp=503577
 Cookie: SESSION={{sessionId}}
 Content-Type: application/x-www-form-urlencoded
 

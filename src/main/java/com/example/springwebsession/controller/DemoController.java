@@ -1,6 +1,8 @@
 package com.example.springwebsession.controller;
 
 import lombok.extern.slf4j.Slf4j;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,6 +21,7 @@ public class DemoController {
    * 
    * @return Mono<String> con el mensaje Hello World
    */
+  @PreAuthorize("hasRole('USER')")
   @GetMapping("/hello")
   public Mono<String> hello() {
     log.info("Endpoint /api/hello llamado");
