@@ -65,8 +65,21 @@ public class AuthController {
     })));
   }
 
-  // Endpoint /auth/validate eliminado - ahora se maneja en
-  // OTPAuthenticationWebFilter
+  /**
+   * Endpoint /auth/validate que devuelve 204 NO_CONTENT cuando la autenticación
+   * es exitosa
+   * El filtro OTPAuthenticationWebFilter se encarga de la validación real del OTP
+   * 
+   * @return ResponseEntity con status 204 NO_CONTENT
+   */
+  @PostMapping("/validate")
+  public Mono<org.springframework.http.ResponseEntity<Void>> validateOtp() {
+    log.info("Endpoint /auth/validate alcanzado - autenticación exitosa por filtro");
+
+    // Si llegamos aquí, significa que el filtro validó exitosamente el OTP
+    // y marcó la sesión como autenticada
+    return Mono.just(org.springframework.http.ResponseEntity.noContent().build());
+  }
 
   /**
    * Endpoint para verificar el estado de autenticación
